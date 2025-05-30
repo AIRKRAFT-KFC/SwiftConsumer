@@ -15,7 +15,7 @@ public class CorsConfig {
         CorsConfiguration config = new CorsConfiguration();
 
         // 정확한 origin 명시
-        config.addAllowedOrigin("http://localhost:3000");
+        config.addAllowedOrigin("*");
 
         config.addAllowedHeader("*");
         config.addAllowedMethod("*");

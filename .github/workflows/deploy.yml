@@ -31,7 +31,7 @@ jobs:
       - name: 빌드된 JAR 파일을 EC2로 복사
         run: |
           scp -i ec2_key.pem -o StrictHostKeyChecking=no \
-            build/libs/SwitfConsumer-*.jar ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/home/${{ secrets.EC2_USER }}/swift.jar
+            build/libs/Consumer-*.jar ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/home/${{ secrets.EC2_USER }}/swift.jar
 
       - name: EC2에 SSH 접속해 서버 재시작
         run: |

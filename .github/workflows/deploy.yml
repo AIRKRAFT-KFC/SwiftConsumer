@@ -1,0 +1,59 @@
+name: Consumer EC2 배포
+
+on:
+  push:
+    branches: main
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: JDK 17 설치
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: gradlew 실행 권한 부여
+        run: chmod +x gradlew
+
+      - name: Gradle로 프로젝트 빌드
+        run: ./gradlew clean bootJar
+
+      - name: SSH 프라이빗 키 저장
+        run: |
+          echo "${{ secrets.EC2_KEY }}" > ec2_key.pem
+          chmod 600 ec2_key.pem
+
+      - name: 빌드된 JAR 파일을 EC2로 복사
+        run: |
+          scp -i ec2_key.pem -o StrictHostKeyChecking=no \
+            build/libs/SwitfConsumer-*.jar ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/home/${{ secrets.EC2_USER }}/swift.jar
+
+      - name: EC2에 SSH 접속해 서버 재시작
+        run: |
+          ssh -i ec2_key.pem -o StrictHostKeyChecking=no \
+            ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
+              # 기존 프로세스 종료
+              pkill -f 'java -jar.*swift.jar' || true
+              sleep 5
+          
+              # 기존 로그 파일 삭제
+              rm -f swift.log
+          
+              # 새로운 애플리케이션 시작
+              nohup java -jar /home/${USER}/swift.jar > swift.log 2>&1 &
+          
+              # 시작 확인
+              sleep 10
+              if pgrep -f 'java -jar.*swift.jar' > /dev/null; then
+                echo "애플리케이션이 성공적으로 시작되었습니다."
+              else
+                echo "애플리케이션 시작 실패. 로그를 확인하세요."
+                tail -20 swift.log
+                exit 1
+              fi
+          EOF

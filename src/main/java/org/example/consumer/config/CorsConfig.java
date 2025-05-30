@@ -20,7 +20,7 @@ public class CorsConfig {
         config.addAllowedHeader("*");
         config.addAllowedMethod("*");
 
-        config.setAllowCredentials(true);
+        config.setAllowCredentials(false);
 
         source.registerCorsConfiguration("/**", config);
         return new CorsFilter(source);
